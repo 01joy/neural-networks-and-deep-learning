@@ -1,6 +1,6 @@
 # A New Py3 Code samples for "Neural Networks and Deep Learning"
 
-learning2fxxx
+learning2fxxxxx纷纷从fds
 
 This repository contains code samples for my book on ["Neural Networks
 and Deep Learning"](http://neuralnetworksanddeeplearning.com).
