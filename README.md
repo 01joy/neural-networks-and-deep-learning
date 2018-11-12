@@ -1,5 +1,7 @@
 # A New Py3 Code samples for "Neural Networks and Deep Learning"
 
+learning
+
 This repository contains code samples for my book on ["Neural Networks
 and Deep Learning"](http://neuralnetworksanddeeplearning.com).
 
