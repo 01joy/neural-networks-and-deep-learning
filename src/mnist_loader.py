@@ -10,7 +10,7 @@ function usually called by our neural network code.
 
 #### Libraries
 # Standard library
-import cPickle
+import pickle
 import gzip
 
 # Third-party libraries
@@ -40,7 +40,7 @@ def load_data():
     below.
     """
     f = gzip.open('../data/mnist.pkl.gz', 'rb')
-    training_data, validation_data, test_data = cPickle.load(f)
+    training_data, validation_data, test_data = pickle.load(f, encoding='bytes')
     f.close()
     return (training_data, validation_data, test_data)
 
@@ -83,3 +83,28 @@ def vectorized_result(j):
     e = np.zeros((10, 1))
     e[j] = 1.0
     return e
+
+def write_data():
+    tr_d, va_d, te_d = load_data()
+    dataset=[tr_d,va_d,te_d]
+    f=gzip.open('../data/mnist3.pkl.gz','wb')
+    pickle.dump(dataset,f,protocol=3)
+    f.close()
+
+
+def plot_digit(X, y):
+    np.savetxt('../fig/%d.csv'%y, X, delimiter=',')
+    
+    import matplotlib.pyplot as plt
+    plt.imshow(X, cmap='Greys') # or 'Greys_r'
+    plt.savefig('../fig/%d.png'%y)
+    plt.show()
+
+
+write_data()
+
+training_data, validation_data, test_data = load_data_wrapper()
+valid_Xs, valid_ys=zip(*validation_data)
+X=np.reshape(valid_Xs[0], (28, 28))
+y=valid_ys[0]
+plot_digit(X, y)
