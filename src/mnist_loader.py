@@ -103,8 +103,7 @@ def plot_digit(X, y):
 
 write_data()
 
-training_data, validation_data, test_data = load_data_wrapper()
-valid_Xs, valid_ys=zip(*validation_data)
-X=np.reshape(valid_Xs[0], (28, 28))
-y=valid_ys[0]
+training_data, validation_data, test_data = load_data()
+X=np.reshape(validation_data[0][0], (28, 28))
+y=validation_data[1][0]
 plot_digit(X, y)
