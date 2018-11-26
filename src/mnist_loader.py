@@ -101,9 +101,17 @@ def plot_digit(X, y):
     plt.show()
 
 
-write_data()
 
-training_data, validation_data, test_data = load_data()
-X=np.reshape(validation_data[0][0], (28, 28))
-y=validation_data[1][0]
-plot_digit(X, y)
+def main():
+    write_data()
+
+    training_data, validation_data, test_data = load_data()
+    X=np.reshape(validation_data[0][0], (28, 28))
+    y=validation_data[1][0]
+    plot_digit(X, y)
+
+
+if __name__ == "__main__":
+    main()
+
+
