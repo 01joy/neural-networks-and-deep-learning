@@ -26,14 +26,14 @@ class Net(nn.Module):
         return F.log_softmax(x, dim=1) # log_softmax 即 log(softmax(x))；dim=1对行进行softmax，因为上面x.view展开成行向量了，log_softmax速度和数值稳定性都比softmax好一些
     
 def train(args, model, device, train_loader, optimizer, epoch):
-    model.train() # 告诉pytorch，这是训练阶段
+    model.train() # 告诉pytorch，这是训练阶段 https://stackoverflow.com/a/51433411/2468587
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad() # 每个batch的梯度重新累加
         output = model(data)
-        loss = F.nll_loss(output, target) # 这里的nll_loss就是Michael Nielsen在ch3提到的log-likelihood cost function，配合softmax使用
-        loss.backward() # 误差反传
-        optimizer.step()
+        loss = F.nll_loss(output, target) # 这里的nll_loss就是Michael Nielsen在ch3提到的log-likelihood cost function，配合softmax使用，batch的梯度/loss要求均值mean
+        loss.backward() # 求loss对参数的梯度dw
+        optimizer.step() # 梯度下降，w'=w-η*dw
         if batch_idx % args.log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
@@ -43,11 +43,11 @@ def test(args, model, device, test_loader):
     model.eval()  # 告诉pytorch，这是预测（评价）阶段
     test_loss = 0
     correct = 0
-    with torch.no_grad():
+    with torch.no_grad(): # 预测时不需要误差反传，https://discuss.pytorch.org/t/model-eval-vs-with-torch-no-grad/19615/2
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
             output = model(data)
-            test_loss += F.nll_loss(output, target, reduction='sum').item() # sum up batch loss
+            test_loss += F.nll_loss(output, target, reduction='sum').item() # sum up batch loss，预测时的loss求sum，L54再求均值
             pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
 
@@ -56,6 +56,24 @@ def test(args, model, device, test_loader):
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
+
+
+def plot1digit(data_loader):
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    examples = enumerate(data_loader)
+    batch_idx, (Xs, ys) = next(examples) # 读取到的是一个batch的所有数据
+
+    X=Xs[0].numpy()[0] # Xs[0]取出batch中的第一个数据，由tensor转换为numpy，因为pytorch tensor的格式是[channel, height, width]，所以最后[0]取出其第一个通道的[h,w]
+    y=ys[0].numpy() # y没有通道，就一个标量值
+
+    np.savetxt('../../../fig/%d.csv'%y, X, delimiter=',')
+    
+    plt.imshow(X, cmap='Greys') # or 'Greys_r'
+    plt.savefig('../../../fig/%d.png'%y)
+    plt.show()
 
 def main():
     # Training settings
@@ -89,9 +107,9 @@ def main():
     kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
     train_loader = torch.utils.data.DataLoader(
         datasets.MNIST('../data', train=True, download=True,
-                       transform=transforms.Compose([
-                           transforms.ToTensor(),
-                           transforms.Normalize((0.1307,), (0.3081,))
+                       transform=transforms.Compose([ # https://discuss.pytorch.org/t/can-some-please-explain-how-the-transforms-work-and-why-normalize-the-data/2461/3
+                           transforms.ToTensor(), # 把[0,255]的(H,W,C)的图片转换为[0,1]的(channel,height,width)的图片
+                           transforms.Normalize((0.1307,), (0.3081,)) # 进行z-score标准化，这两个数分别是MNIST的均值和标准差
                        ])),
         batch_size=args.batch_size, shuffle=True, **kwargs)
     test_loader = torch.utils.data.DataLoader(
@@ -101,6 +119,7 @@ def main():
                        ])),
         batch_size=args.test_batch_size, shuffle=True, **kwargs)
 
+    # plot1digit(train_loader)
 
     model = Net().to(device)
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
